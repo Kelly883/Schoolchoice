@@ -121,7 +121,8 @@ class PaystackController extends Controller
 
         // Verify webhook signature
         $signature = $request->header('x-paystack-signature');
-        $computed = hash_hmac('sha512', $request->getContent(), config('services.paystack.secret_key'));
+        $secret = config('services.paystack.webhook_secret') ?: config('services.paystack.secret_key');
+        $computed = hash_hmac('sha512', $request->getContent(), $secret);
 
         if ($signature !== $computed) {
             return response()->json(['message' => 'Invalid signature'], 400);
