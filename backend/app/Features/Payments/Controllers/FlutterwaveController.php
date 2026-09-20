@@ -126,9 +126,10 @@ class FlutterwaveController extends Controller
 
         // Verify webhook signature
         $signature = $request->header('verif-hash');
-        $secret = config('services.flutterwave.secret_key');
+        $secret = config('services.flutterwave.webhook_secret') ?: config('services.flutterwave.secret_key');
+        $computed = hash_hmac('sha256', $request->getContent(), $secret);
 
-        if ($signature !== $secret) {
+        if ($signature !== $computed) {
             return response()->json(['message' => 'Invalid signature'], 400);
         }
 
