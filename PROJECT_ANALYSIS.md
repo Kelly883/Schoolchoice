@@ -1,12 +1,43 @@
 # School Digital Platform — Phase 1: Project Analysis
 
 **Date**: 2026-09-20
-**Status**: ACTIVE BASELINE — NOT A NEW REPOSITORY
-**Analyst**: Kilo (automated)
+**Status**: ACTIVE BASELINE — verified against the live codebase (all claims below are evidence-based)
+**Method**: Direct inspection + executed tests/lint/build/runtime probes
 
 ---
 
 ## 1. Executive Summary
+
+The repository contains a **partially implemented Laravel 11 (API-only) backend** and a **Next.js 16 (App Router) frontend**. The frontend builds and serves successfully (54 routes, production build passes, type-check passes). The backend **boots in artisan/test context and reaches the database, but cannot serve HTTP at all** because its `public/` document root is missing, and its route table does not match the documented/tested API surface.
+
+**Verified baseline results (this session):**
+
+| Check | Result |
+|---|---|
+| Backend boot (artisan/test) | ✅ Boots; DB reachable (SQLite) |
+| Backend HTTP (`artisan serve`) | ❌ CRASHES — `public/` directory missing (no `public/index.php`) |
+| PHPUnit | ❌ 23 tests: **20 failures, 1 error, 2 pass** — all 404s: test surface (`/api/v1/...`) ≠ route table (`/api/...`) |
+| Frontend `tsc --noEmit` | ✅ Pass (0 errors) |
+| Frontend `next build` | ✅ Pass (Turbopack, 54 routes prerendered) |
+| Frontend `next lint` | ❌ Fails — `lint` script uses `--dir` flag, removed in Next 16 CLI |
+| Frontend HTTP (production) | ✅ `/`, `/login`, `/about` → 200 |
+| Frontend SSR integrity | ⚠️ Production HTML is an **empty shell**: `<head>` + flight data only, **empty `<body>`**, no `<h1>` in SSR output |
+| Playwright e2e | ⏳ Not run (browser binaries being installed during analysis) |
+| Backend Pint (style) | ⏳ Running during analysis |
+| Type-check evidence file count | 260 tracked files |
+
+### Gate Decision
+
+Phase 2+ implementation is **blocked by P0 items** in §11. The critical bug named in the previous analysis (`routes/api.php` recursive require) is **already fixed** — but it has been **replaced by a different, larger blocker**: the backend cannot serve HTTP and its routes don't match the tested API surface.
+
+**Key correction vs. the previous PROJECT_ANALYSIS.md:** that document's claims about 15 features / 27 migrations / 22 tests / 4 test files were stale. Current counts: **21 features, 28 migrations, 27 models, 23 tests in 4 feature files** (§4–§6).
+
+---
+
+> [!WARNING]
+> **SUPERSEDED SUMMARY below (kept for history).** Its claims were invalidated by this session's verification: the `routes/api.php` bug it names is **fixed**; current blockers are listed in §1 above. Counts differ (21 features, 28 migrations, 23 tests in 4 files). Verify against code before citing.
+
+## 1. Executive Summary (SUPERSEDED)
 
 The repository is **not empty**. It already contains a partially implemented Laravel 11 backend API and a Next.js 16 frontend with a complete public website, parent portal, and admin portal shell. The project has a solid architectural foundation, a working design system, and a complete database schema. However, there is **one critical blocking bug** that prevents the backend from booting, and most API business logic remains as stubs.
 
@@ -613,3 +644,106 @@ No application code was modified.
 ---
 
 **Phase 1 Complete.** Baseline documented. Critical blocking bug identified. Ready for remediation before Phase 2.
+---
+
+# ADDENDUM — Verification Evidence (2026-09-20, this session)
+
+## A. Route Inventory (verified via `php artisan route:list`)
+
+Registered at analysis time (base `/api/v1` is **NOT** applied — see Risk R1):
+
+| Prefix | Endpoints | Middleware | State |
+|---|---|---|---|
+| auth | login, register, password/reset (public); me, logout, refresh (protected) | bearer | Implemented |
+| admissions | applications CRUD + track + documents + status; tours | bearer + role:super_admin,school_admin,admissions_officer | Implemented |
+| payments | paystack & flutterwave initialize/verify/webhook | none (public) | Implemented |
+| sanctum | csrf-cookie | — | Dead weight (Sanctum unused) |
+| 18 other features | — | — | Route files are `// TODO` stubs (at analysis start) |
+
+**Active mutation notice:** while analysis ran, `parents.php`, `fees.php`, `settings.php` and others were populated by a concurrent agent to match the failing tests' surface (`/api/v1/...` prefixes). Route counts are a moving target; re-run `route:list` before Phase 2.
+
+## B. Frontend API Client → Backend Path Map (CRITICAL MISMATCH)
+
+| Frontend calls | Backend serves (verified) | Result |
+|---|---|---|
+| `/auth/login` `/auth/me` `/auth/logout` | `/login` `/me` `/logout` | 404 |
+| `/admissions/applications` | `/applications` | 404 |
+| `/payments/paystack/initialize` | `/paystack/initialize` | 404 |
+| `/parent/receipts` | (no such route) | 404 |
+
+Tests expect `/api/v1/auth/*`, `/api/v1/parent/children`, `/api/v1/admin/*` — the test suite is the API contract of record.
+
+## C. Database / Schema Inventory
+
+- **28 migration files**, **27 Eloquent models**, **29-table schema** (`database/schema.sql`):
+  users, sessions, roles, students, parents, teachers, classes, subjects, academic_sessions, terms, applications, application_documents, school_tours, fee_structures, invoices, payments, receipts, attendance, results, announcements, messages, events, news, gallery, documents, audit_logs, notifications, jobs, password_reset_tokens
+- Seeders: single `DatabaseSeeder` (7 roles + super admin + session/terms + more)
+- **`database/database.sqlite` is tracked in git** (192KB binary) — must be untracked/ignored
+- Auth model: custom `sessions` table + `token_hash` (sha256), idle & absolute timeout, checked in `BearerTokenAuth`
+
+## D. Test / Build Report (executed this session)
+
+| Suite | Command | Result |
+|---|---|---|
+| Backend feature tests | `vendor/bin/phpunit` | **23 tests: 20 F, 1 E, 2 pass.** All failures = 404 (route surface mismatch); 1 error = PaymentsTest create+actingAs conflict |
+| Backend style | `vendor/bin/pint --test app` | **34 files** with violations (ordered_imports, unused imports, braces, concat spacing) |
+| Frontend types | `npm run type-check` | ✅ Pass |
+| Frontend build | `npm run build` | ✅ Pass — Next 16.3.5 Turbopack, 54 routes prerendered |
+| Frontend lint | `npm run lint` | ❌ `--dir` flag removed in Next 16 CLI |
+| Playwright e2e | `npm test` | ⏳ Not run — browser binaries mid-download; also requires backend+frontend up simultaneously |
+
+## E. Runtime Probes
+
+- **Backend HTTP:** `php artisan serve` **crashes**: `The provided cwd ".../backend/public" does not exist` — **no `public/` dir, no `public/index.php`** (verified; `ls public` fails)
+- **Frontend HTTP (prod build):** `/`, `/login`, `/about` → **200** via `next start`
+- **SSR integrity:** production HTML = `<head>` + RSC flight payload, **empty `<body>`** → no `<h1>`/hero in server HTML; e2e test asserting `h1` text via SSR will fail; SEO concern
+- Playwright probe (rendered DOM + desktop/mobile screenshots): **blocked on browser install** at time of writing
+
+## F. Risk Register (ordered by severity)
+
+| # | Risk | Sev | Evidence |
+|---|---|---|---|
+| R1 | `RouteServiceProvider` (adds `/api/v1`) not registered — no `bootstrap/providers.php`; also orphans `AuthServiceProvider`, `EventServiceProvider` | P0 | bootstrap/ has only app.php, cache/ |
+| R2 | No HTTP entrypoint (`public/index.php` missing) — `artisan serve` crash | P0 | serve log: cwd does not exist |
+| R3 | Frontend/backend path mismatch — every authed frontend call 404s | P0 | §B |
+| R4 | `AuthContext` calls `/auth/me` against wrong base — portal session restore broken | P0 | client.ts + auth.ts |
+| R5 | Empty-`<body>` SSR — e2e + SEO breakage | P1 | §E |
+| R6 | Hybrid Laravel 11 (`Kernel.php` + `bootstrap/app.php`) — `withMiddleware` empty; aliases load only if legacy Kernel is wired (unproven) | P1 | both files read |
+| R7 | Dual role model: string `users.role` vs `roles` table (FKs unverified) | P1 | schema.sql + seeder |
+| R8 | Payments webhooks public + `secret_key`-as-webhook-secret fallback | P1 | PaystackController:121+ |
+| R9 | `database.sqlite` tracked in git | P1 | git ls-files |
+| R10 | Next 16 vs docs/tests drift: `lint --dir` broken, eslint-config-next@15 | P2 | package.json |
+| R11 | Sanctum routes registered, unused | P2 | route:list |
+| R12 | Hardcoded stats in `StatsSection` (25+, 2000+, 150+, 98%) | P2 | StatsSection.tsx |
+| R13 | `.env` (real) exists locally with secrets — gitignored ✅, must stay so | INFO | find results |
+| R14 | **Concurrent agent mutating the tree during analysis** — uncommitted changes to routes/bootstrap/config/tests not authored here | INFO | git status |
+
+## G. Reusable Assets to Preserve (verified)
+
+- `components/ui/*` — Button, Card, Input, Select, Textarea, Badge, Alert, Modal, EmptyState, Spinner (+ index barrel)
+- `components/layout/*` — PublicLayout/PublicHeader/PublicFooter, AdminLayout, ParentLayout, AuthLayout
+- `features/public-site/*` — Hero/Stats/Programs/CTA sections
+- `lib/api/client.ts` — axios instance, Bearer attach, 401 redirect
+- `globals.css` design tokens (primary/secondary palettes, btn-primary/btn-outline, section, container-wide)
+- Backend: middleware suite (BearerTokenAuth with idle/absolute expiry, RoleAccess, AuditLog, RateLimit, SecurityHeaders), 27 complete models, migrations, schema.sql
+
+## H. Architecture Decisions & Deviations (Phase 1)
+
+1. **No code changed by this analysis** (only this document). Prior doc's "fixed api.php" was someone else's edit, already committed.
+2. **Test suite = contract of record** (`/api/v1/*`); backend must be brought to the tests, not tests to backend.
+3. **Restore, don't re-architect:** recreate `public/index.php`, `bootstrap/providers.php` (register App/Auth/Event/Route providers) — standard Laravel 11 skeleton files.
+4. **Single source of truth for roles:** keep `roles` table + `users.role` string as display/lookup only, or migrate fully to the table — decide in Phase 2 with FK audit.
+5. **Untrack `database.sqlite`**, add to .gitignore.
+6. **Concurrent-editor protocol:** commit only files authored in this session; verify `git status` before every commit (learned after 4 follow-up commits in the push session).
+
+## I. Phase 1 Gate — P0 Remediation Required Before Phase 2
+
+1. Recreate `backend/public/index.php` (stock Laravel 11) → `artisan serve` must return 200 on `/up`
+2. Create `backend/bootstrap/providers.php` registering App/Auth/Event/Route providers → route:list shows `/api/v1/*`
+3. Align feature route files to the test surface (`/api/v1/...` via RouteServiceProvider prefix) — in progress by concurrent agent, verify
+4. Fix `AuthContext`/`lib/api/*` paths to match served routes (or vice versa — one decision, applied everywhere)
+5. Untrack `database.sqlite`; gitignore it
+6. Fix `lint` script (remove `--dir` or pin eslint-config-next@16)
+7. Re-run full suite: phpunit green, build green, lint green — record numbers, then proceed to Phase 2
+
+**Phase 1 complete with gate: BLOCKED on P0 items R1–R4.**
