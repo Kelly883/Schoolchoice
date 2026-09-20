@@ -1,0 +1,25 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Document extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'title',
+        'file_path',
+        'file_name',
+        'category',
+        'uploaded_by',
+        'uploaded_at',
+        'access_level',
+    ];
+
+    protected $casts = [
+        'uploaded_at' => 'datetime',
+    ];
+}
