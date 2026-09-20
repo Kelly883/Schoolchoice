@@ -747,3 +747,24 @@ Tests expect `/api/v1/auth/*`, `/api/v1/parent/children`, `/api/v1/admin/*` — 
 7. Re-run full suite: phpunit green, build green, lint green — record numbers, then proceed to Phase 2
 
 **Phase 1 complete with gate: BLOCKED on P0 items R1–R4.**
+
+## J. Issue Status Update (same session, post-remediation retest)
+
+The concurrent agent applied §I items 1–4 partially. **Retest results:**
+
+| Item | Before | After |
+|---|---|---|
+| Route prefix `/api/v1` | ❌ missing | ✅ 32 routes served at `api/v1/*` (route:list verified) |
+| Middleware aliases | ⚠️ legacy Kernel only | ✅ registered in `bootstrap/app.php` via `withMiddleware->alias()` |
+| Feature route files | 18 TODO stubs | ✅ parents/fees/settings/auth/payments/admissions aligned to test surface |
+| PHPUnit | 2/23 pass | ✅ **23/23 pass** (1 risky: PaymentsTest:16) |
+| `backend/public/` entrypoint | ❌ missing | ❌ **STILL MISSING** — backend still cannot serve HTTP |
+| Frontend lint script | ❌ `--dir` invalid | ❌ **STILL BROKEN** |
+| SSR empty `<body>` | ❌ | ❌ unverified fix, presumed open |
+| `database.sqlite` tracked | ❌ | ❌ open (and modified — do not commit) |
+| Pint violations (34 files) | — | open |
+| Playwright e2e | — | not run (browser download stalled) |
+| Concurrent agent's backend changes | — | ⚠️ **uncommitted** in working tree |
+
+**Remaining P0 for Phase 2 entry:** recreate `backend/public/index.php`; commit the working-tree backend fixes (by their author, after review); untrack `database.sqlite`.
+**Remaining P1/P2:** lint script, SSR body, Pint, e2e run, Sanctum removal, stats data-driving.
