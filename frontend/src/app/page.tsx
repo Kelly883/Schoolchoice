@@ -14,3 +14,22 @@ export default function HomePage() {
     </PublicLayout>
   );
 }
+
+// Metadata for SEO
+export const metadata = {
+  title: 'SchoolName - Excellence in Education',
+  description: 'Premium public school offering world-class education from early years through secondary school. Apply online today.',
+  openGraph: {
+    title: 'SchoolName - Excellence in Education',
+    description: 'Premium public school offering world-class education from early years through secondary school.',
+    url: 'https://schoolname.edu',
+    siteName: 'SchoolName',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+      },
+    ],
+  },
+};

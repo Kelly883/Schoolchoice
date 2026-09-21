@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Card, Badge, Alert, Spinner } from '@/components/ui';
+import { Button, Card, CardHeader, CardTitle, CardContent, CardFooter, Badge, Alert, Spinner } from '@/components/ui';
 import { useState } from 'react';
 
 export default function DesignSystemTestPage() {
@@ -38,17 +38,17 @@ export default function DesignSystemTestPage() {
           <h2 className="text-xl font-semibold text-neutral-900 mb-4">Cards</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <Card>
-              <Card.Header>
-                <Card.Title>Student Profile</Card.Title>
-              </Card.Header>
-              <Card.Content>
+              <CardHeader>
+                <CardTitle>Student Profile</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <p className="text-neutral-600">
                   Academic information, attendance, and results for each student.
                 </p>
-              </Card.Content>
-              <Card.Footer>
+              </CardContent>
+              <CardFooter>
                 <Button variant="outline" size="sm">View Details</Button>
-              </Card.Footer>
+              </CardFooter>
             </Card>
             <Card padded>
               <h3 className="text-lg font-semibold text-neutral-900 mb-2">Quick Stats</h3>

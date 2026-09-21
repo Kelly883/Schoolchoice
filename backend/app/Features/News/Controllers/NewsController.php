@@ -3,47 +3,47 @@
 namespace App\Features\News\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\News;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class NewsController extends Controller
 {
-    public function index(): JsonResponse
+    /**
+     * Public list of published news articles.
+     */
+    public function index(Request $request): JsonResponse
     {
+        $news = News::where('is_published', true)
+            ->orderBy('published_at', 'desc')
+            ->limit(20)
+            ->get();
+
         return response()->json([
             'success' => true,
-            'data' => [],
+            'data' => $news,
         ]);
     }
 
-    public function store(): JsonResponse
+    /**
+     * Get a single published news article by slug.
+     */
+    public function show(string $slug): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'message' => 'Created successfully.',
-        ], 201);
-    }
+        $article = News::where('slug', $slug)
+            ->where('is_published', true)
+            ->first();
 
-    public function show(int $id): JsonResponse
-    {
-        return response()->json([
-            'success' => true,
-            'data' => null,
-        ]);
-    }
+        if (!$article) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Article not found.',
+            ], 404);
+        }
 
-    public function update(int $id): JsonResponse
-    {
         return response()->json([
             'success' => true,
-            'message' => 'Updated successfully.',
-        ]);
-    }
-
-    public function destroy(int $id): JsonResponse
-    {
-        return response()->json([
-            'success' => true,
-            'message' => 'Deleted successfully.',
+            'data' => $article,
         ]);
     }
 }
