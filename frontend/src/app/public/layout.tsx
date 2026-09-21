@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
+import '@/styles/globals.css';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -12,10 +13,6 @@ const playfair = Playfair_Display({
   variable: '--font-display',
   display: 'swap',
 });
-
-import '@/styles/globals.css';
-import { AuthProvider } from '@/lib/auth/AuthContext';
-import { ProtectedRoute } from '@/lib/auth/ProtectedRoute';
 
 export const metadata: Metadata = {
   title: {
@@ -30,7 +27,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default function PublicLayoutRoot({
   children,
 }: {
   children: React.ReactNode;
@@ -38,9 +35,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <body>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        {children}
       </body>
     </html>
   );

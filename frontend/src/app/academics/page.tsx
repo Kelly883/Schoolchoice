@@ -76,7 +76,7 @@ export default function AcademicsPage() {
                   Our curriculum aligns with national standards while incorporating international best practices, including Cambridge International and IB frameworks.
                 </p>
 
-                <h4 className="text-xl font-semibold text-neutral-900 mb-3">Enriched Enrichment</h4>
+                <h4 className="text-xl font-semibold text-neutral-900 mb-3">Enrichment Activities</h4>
                 <p className="text-neutral-600 mb-4">
                   From arts and music to sports and coding, we offer diverse extracurricular activities that nurture creativity and physical development.
                 </p>

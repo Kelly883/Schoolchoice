@@ -19,6 +19,9 @@ export default function HomePage() {
 export const metadata = {
   title: 'SchoolName - Excellence in Education',
   description: 'Premium public school offering world-class education from early years through secondary school. Apply online today.',
+  icons: {
+    icon: '/favicon.svg',
+  },
   openGraph: {
     title: 'SchoolName - Excellence in Education',
     description: 'Premium public school offering world-class education from early years through secondary school.',
@@ -26,9 +29,10 @@ export const metadata = {
     siteName: 'SchoolName',
     images: [
       {
-        url: '/og-image.png',
+        url: '/og-image.svg',
         width: 1200,
         height: 630,
+        type: 'image/svg+xml',
       },
     ],
   },

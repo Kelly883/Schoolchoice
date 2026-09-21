@@ -20,6 +20,7 @@ export default function AdmissionsApplyPage() {
     subject: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const totalSteps = 3;
 
@@ -35,7 +36,7 @@ export default function AdmissionsApplyPage() {
     setIsSubmitting(true);
     await new Promise(resolve => setTimeout(resolve, 2000));
     setIsSubmitting(false);
-    alert('Application submitted successfully! We will contact you shortly.');
+    setIsSubmitted(true);
   };
 
   return (
@@ -224,6 +225,12 @@ export default function AdmissionsApplyPage() {
             {step === 3 && (
               <div>
                 <h3 className="text-xl font-semibold text-neutral-900 mb-4">Review Your Application</h3>
+                
+                {isSubmitted && (
+                  <div className="mb-6 p-4 bg-green-50 text-green-800 rounded-lg" role="alert">
+                    <p className="font-medium">Application submitted successfully! We will contact you shortly.</p>
+                  </div>
+                )}
                 
                 <div className="bg-neutral-50 rounded-lg p-4 mb-6">
                   <h4 className="font-semibold text-neutral-900 mb-2">Application Summary</h4>
