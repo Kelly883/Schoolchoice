@@ -58,7 +58,7 @@ class TourController extends Controller
 
         // Check for double-booking
         $existing = SchoolTour::where('email', $validated['email'])
-            ->where('preferred_date', $validated['preferred_date'])
+            ->whereDate('preferred_date', $validated['preferred_date'])
             ->where('status', '!=', 'cancelled')
             ->first();
 

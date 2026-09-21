@@ -30,3 +30,4 @@ backend/storage/framework/views/*
 backend/bootstrap/cache/*
 backend/public/storage
 backend/.env
+backend/database/database.sqlite

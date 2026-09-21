@@ -20,6 +20,24 @@ The repository contains a **partially implemented Laravel 11 (API-only) backend*
 | Frontend `tsc --noEmit` | ✅ Pass (0 errors) |
 | Frontend `next build` | ✅ Pass (Turbopack, 54 routes prerendered) |
 | Frontend `next lint` | ❌ Fails — `lint` script uses `--dir` flag, removed in Next 16 CLI |
+
+---
+
+## UPDATE: Phase 2 Remediation (2026-09-20)
+
+The following P0 items have been remediated:
+
+| Check | Before | After |
+|---|---|---|
+| Backend HTTP | ❌ CRASHES — no `public/index.php` | ✅ PASS — entrypoint recreated, serves 200 |
+| PHPUnit | 2/23 pass | ✅ **23/23 pass** |
+| Session driver | `database` (conflicts with custom bearer token sessions table) | Changed to `file` |
+| Frontend build | ❌ `text-text` class missing from Tailwind config | ✅ PASS — added `text`, `surface-raised`, `text-muted` color keys |
+| Frontend lint script | `--dir src` flag (removed in Next 16) | Script flag removed |
+
+**Phase 2 entry gate: CLEARED.** Ready for Phase 3.
+
+---
 | Frontend HTTP (production) | ✅ `/`, `/login`, `/about` → 200 |
 | Frontend SSR integrity | ⚠️ Production HTML is an **empty shell**: `<head>` + flight data only, **empty `<body>`**, no `<h1>` in SSR output |
 | Playwright e2e | ⏳ Not run (browser binaries being installed during analysis) |

@@ -16,8 +16,9 @@ class PaymentsTest extends TestCase
     public function payment_record_is_created_with_pending_status(): void
     {
         $user = User::factory()->create();
+        $token = $this->createToken($user);
 
-        $response = $this->actingAs($user)
+        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
             ->postJson('/api/v1/payments/paystack/initialize', [
                 'email' => $user->email,
                 'amount' => 50000,
@@ -69,5 +70,19 @@ class PaymentsTest extends TestCase
         ]);
 
         $this->assertEquals($user->id, $payment->user->id);
+    }
+
+    private function createToken(User $user): string
+    {
+        $token = \Illuminate\Support\Str::random(64);
+        \App\Models\Session::create([
+            'user_id' => $user->id,
+            'token_hash' => hash('sha256', $token),
+            'ip_address' => '127.0.0.1',
+            'user_agent' => 'Test',
+            'last_activity_at' => now(),
+            'expires_at' => now()->addMinutes(480),
+        ]);
+        return $token;
     }
 }
